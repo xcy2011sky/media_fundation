@@ -1,0 +1,9 @@
+# 忽略 build 目录
+build/
+
+# 忽略 .vscode 目录
+.vscode/
+.idea/
+.vs/
+# 忽略日志文件
+*.log
