@@ -56,6 +56,7 @@ int main() {
         if (_kbhit() && _getch() == 27) {
             break;
         }
+        capture.UpdateFps();
     }
 
     return 0;

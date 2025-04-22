@@ -8,6 +8,9 @@
 #include <mfapi.h>
 #include <uuids.h>
 
+
+
+
 // 新增队列和线程相关成员变量
 std::queue<ComPtr<IMFSample>> m_sampleQueue;
 std::queue<std::vector<BYTE>> m_renderQueue;
@@ -15,8 +18,12 @@ std::mutex m_sampleMutex, m_renderMutex;
 std::condition_variable m_sampleCV, m_renderCV;
 bool m_stopThreads = false;
 
+// 新增MFT相关成员变量
+ComPtr<IMFTransform> m_pMFT;
+ComPtr<IMFMediaType> m_pInputType;
+ComPtr<IMFMediaType> m_pOutputType;
 // 新增线程函数
-void CaptureThread(CameraCapture* capture);
+
 void ProcessThread(CameraCapture* capture);
 void RenderThread(CameraCapture* capture);
 
@@ -39,19 +46,17 @@ HRESULT CameraCapture::Initialize() {
     hr = CreateD3D11DeviceAndSwapChain();
     if (FAILED(hr)) return hr;
 
-    // 初始化MFT
-    hr = InitializeMFT();
-    if (FAILED(hr)) return hr;
+     // 初始化MFT
+     hr = InitializeMFT();
+     if (FAILED(hr)) return hr;
 
     // 启动线程
-    std::thread captureThread(CaptureThread, this);
-    std::thread processThread(ProcessThread, this);
-    std::thread renderThread(RenderThread, this);
+    // std::thread processThread(ProcessThread, this);
+    // std::thread renderThread(RenderThread, this);
 
-    // 等待线程结束
-    captureThread.join();
-    processThread.join();
-    renderThread.join();
+    // // 等待线程结束
+    // processThread.join();
+    // renderThread.join();
 
     return hr;
 }
@@ -219,6 +224,27 @@ HRESULT CameraCapture::CreateMediaSourceReader(const std::wstring& symbolicLink)
 }
 
 HRESULT CameraCapture::RenderFrame() {
+        ComPtr<IMFSample> pSample;
+        DWORD dwFlags = 0;
+        DWORD streamIndex = 0;
+        LONGLONG llTimeStamp = 0;
+
+        HRESULT hr = m_pSourceReader->ReadSample(
+            MF_SOURCE_READER_FIRST_VIDEO_STREAM,
+            0,
+            &streamIndex,
+            &dwFlags,
+            &llTimeStamp,
+            &pSample
+        );
+
+      /*  if (SUCCEEDED(hr) && pSample) {
+            std::lock_guard<std::mutex> lock(m_sampleMutex);
+           m_sampleQueue.push(pSample);
+            m_sampleCV.notify_one();
+        }*/
+     
+    
     return S_OK;
 }
 
@@ -289,84 +315,18 @@ void CameraCapture::Cleanup() {
     }
     MFShutdown();
 }
-// 新增MFT相关成员变量
-ComPtr<IMFTransform> m_pMFT;
-ComPtr<IMFMediaType> m_pInputType;
-ComPtr<IMFMediaType> m_pOutputType;
 
-#include <initguid.h>
-#include <wmcodecdsp.h>
 // 新增MFT初始化函数
 HRESULT CameraCapture::InitializeMFT() {
     HRESULT hr = S_OK;
-
-    // 创建MFT实例（H264解码器）
-    hr = CoCreateInstance(CLSID_CMSH264DecoderMFT, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&m_pMFT));
-    if (FAILED(hr)) {
-        std::cerr << "Failed to create H264 decoder MFT: " << std::hex << hr << std::endl;
-        return hr;
-    }
-
-    // 设置输入类型为H264
-    hr = MFCreateMediaType(&m_pInputType);
-    if (FAILED(hr)) return hr;
-
-    hr = m_pInputType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
-    if (FAILED(hr)) return hr;
-
-    hr = m_pInputType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264);
-    if (FAILED(hr)) return hr;
-
-    hr = m_pMFT->SetInputType(0, m_pInputType.Get(), 0);
-    if (FAILED(hr)) {
-        std::cerr << "Failed to set MFT input type: " << std::hex << hr << std::endl;
-        return hr;
-    }
-
-    // 设置输出类型为RGB32
-    hr = MFCreateMediaType(&m_pOutputType);
-    if (FAILED(hr)) return hr;
-
-    hr = m_pOutputType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
-    if (FAILED(hr)) return hr;
-
-    hr = m_pOutputType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_I420);
-    if (FAILED(hr)) return hr;
-
-    hr = m_pMFT->SetOutputType(0, m_pOutputType.Get(), 0);
-    if (FAILED(hr)) {
-        std::cerr << "Failed to set MFT output type: " << std::hex << hr << std::endl;
-        return hr;
-    }
-
-    return hr;
+     hr= m_CodecHelper.Initialize(m_pDevice.Get());
+     if(hr!=S_OK){
+         std::cout<<"MFT初始化失败"<<std::endl;
+     }
+      return hr;
+    
 }
 
-// 新增线程函数实现
-void CaptureThread(CameraCapture* capture) {
-    while (!capture->m_stopThreads) {
-        ComPtr<IMFSample> pSample;
-        DWORD dwFlags = 0;
-        DWORD streamIndex = 0;
-        LONGLONG llTimeStamp = 0;
-
-        HRESULT hr = capture->m_pSourceReader->ReadSample(
-            MF_SOURCE_READER_FIRST_VIDEO_STREAM,
-            0,
-            &streamIndex,
-            &dwFlags,
-            &llTimeStamp,
-            &pSample
-        );
-
-        if (SUCCEEDED(hr) && pSample) {
-            std::lock_guard<std::mutex> lock(capture->m_sampleMutex);
-            capture->m_sampleQueue.push(pSample);
-            capture->m_sampleCV.notify_one();
-        }
-        capture->UpdateFps();
-    }
-}
 
 void ProcessThread(CameraCapture* capture) {
     while (!capture->m_stopThreads) {
@@ -377,45 +337,11 @@ void ProcessThread(CameraCapture* capture) {
             ComPtr<IMFSample> pSample = capture->m_sampleQueue.front();
             capture->m_sampleQueue.pop();
             lock.unlock();
-
-          /*  ComPtr<IMFMediaBuffer> pInputBuffer;
-            HRESULT hr = pSample->ConvertToContiguousBuffer(&pInputBuffer);
-            if (FAILED(hr)) continue;*/
-
-            HRESULT hr = capture->m_pMFT->ProcessInput(0,pSample.Get(), 0);
-            if (FAILED(hr)) continue;
-
-            // 修改: 使用 MFT_OUTPUT_DATA_BUFFER 结构体接收输出数据
-            MFT_OUTPUT_DATA_BUFFER outputDataBuffer = { 0 };
-            DWORD processOutputStatus = 0;
-            ComPtr<IMFSample> pOutputSample;
-            hr = MFCreateSample(&pOutputSample);
-            if (FAILED(hr)) continue;
-
-            ComPtr<IMFMediaBuffer> pOutputBuffer;
-            hr = MFCreateMemoryBuffer(3840 * 2160 * 4, &pOutputBuffer); // 假设 RGB32 格式
-            if (FAILED(hr)) continue;
-
-            pOutputSample->AddBuffer(pOutputBuffer.Get());
-            outputDataBuffer.pSample = pOutputSample.Get();
-
-            hr = capture->m_pMFT->ProcessOutput(0, 1, &outputDataBuffer, &processOutputStatus);
-            if (hr == MF_E_TRANSFORM_NEED_MORE_INPUT) {
-                continue; // 需要更多输入数据
-            }
-            if (FAILED(hr)) continue;
-
-            BYTE* pData = nullptr;
-            DWORD cbMaxLength = 0;
-            DWORD cbCurrentLength = 0;
-            hr = pOutputBuffer->Lock(&pData, &cbMaxLength, &cbCurrentLength);
-            if (FAILED(hr)) continue;
-
-            std::vector<BYTE> frameData(pData, pData + cbCurrentLength);
-            pOutputBuffer->Unlock();
+            capture->m_CodecHelper.DecodeH264ToTexture(pSample, 0, nullptr); // TODO: 实现解码逻辑
+        
 
             std::lock_guard<std::mutex> renderLock(capture->m_renderMutex);
-            capture->m_renderQueue.push(frameData);
+            capture->m_renderQueue.push();
             capture->m_renderCV.notify_one();
         }
     }

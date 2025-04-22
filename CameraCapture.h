@@ -20,6 +20,7 @@
 #include <condition_variable>
 #include <mftransform.h>
 #include <mfobjects.h>
+#include "MFTCodecHelper.h"
 
 #pragma comment(lib, "mfplat.lib")
 #pragma comment(lib, "mfreadwrite.lib")
@@ -30,7 +31,7 @@
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3dcompiler.lib")
-#pragma comment(lib, "wmcodecdspuuid.lib")
+
 
 
 using namespace Microsoft::WRL;
@@ -62,12 +63,13 @@ public:
     std::queue<std::vector<BYTE>> m_renderQueue;
     std::mutex m_sampleMutex, m_renderMutex;
     std::condition_variable m_sampleCV, m_renderCV;
-    bool m_stopThreads = false;
+    bool m_stopThreads = true;
 
     // 新增MFT相关成员变量
     ComPtr<IMFTransform> m_pMFT;
     ComPtr<IMFMediaType> m_pInputType;
     ComPtr<IMFMediaType> m_pOutputType;
+    MFTCodecHelper m_CodecHelper;
 
     HRESULT EnumerateCameras();
     HRESULT CreateMediaSourceReader(const std::wstring& symbolicLink);

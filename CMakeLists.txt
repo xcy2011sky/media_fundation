@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(SOURCES
     main.cpp
     CameraCapture.cpp
+    MFTCodecHelper.cpp
 )
 
 # 添加可执行文件
