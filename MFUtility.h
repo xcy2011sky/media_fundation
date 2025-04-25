@@ -14,7 +14,7 @@
 *
 * License: Public Domain (no warranty, use at own risk)
 /******************************************************************************/
-
+#pragma once
 #include <stdio.h>
 #include <tchar.h>
 #include <mfapi.h>
@@ -66,7 +66,7 @@ template <class T> inline void SAFE_RELEASE(T*& pT)
 
 #include <Windows.h>
 
-std::string WStrToStr(LPCWSTR lpwstr) {
+inline std::string WStrToStr(LPCWSTR lpwstr) {
     int size = WideCharToMultiByte(CP_ACP, 0, lpwstr, -1, NULL, 0, NULL, NULL);
     std::string str(size, 0);
     WideCharToMultiByte(CP_ACP, 0, lpwstr, -1, &str[0], size, NULL, NULL);
@@ -79,7 +79,7 @@ enum class DeviceType { Audio, Video };
 #define IF_EQUAL_RETURN(param, val) if(val == param) return #val
 #endif
 
-LPCSTR GetGUIDNameConst(const GUID& guid)
+inline LPCSTR GetGUIDNameConst(const GUID& guid)
 {
   IF_EQUAL_RETURN(guid, MF_MT_MAJOR_TYPE);
   IF_EQUAL_RETURN(guid, MF_MT_MAJOR_TYPE);
@@ -237,7 +237,7 @@ LPCSTR GetGUIDNameConst(const GUID& guid)
 *
 * Potential improvements https://docs.microsoft.com/en-us/windows/win32/medfound/media-type-debugging-code.
 */
-std::string GetMediaTypeDescription(IMFMediaType* pMediaType)
+inline std::string GetMediaTypeDescription(IMFMediaType* pMediaType)
 {
   HRESULT hr = S_OK;
   GUID MajorType;
@@ -418,7 +418,7 @@ done:
 *
 * Potential improvements https://docs.microsoft.com/en-us/windows/win32/medfound/media-type-debugging-code.
 */
-std::string GetVideoTypeDescriptionBrief(IMFMediaType* pMediaType)
+inline std::string GetVideoTypeDescriptionBrief(IMFMediaType* pMediaType)
 {
   std::string description = " ";
   GUID subType;
@@ -428,9 +428,9 @@ std::string GetVideoTypeDescriptionBrief(IMFMediaType* pMediaType)
     description = " <NULL>";
   }
   else {
-    CHECK_HR(pMediaType->GetGUID(MF_MT_SUBTYPE, &subType), "Failed to get video sub type.");
-    CHECK_HR(MFGetAttributeSize(pMediaType, MF_MT_FRAME_SIZE, &width, &height), "Failed to get MF_MT_FRAME_SIZE attribute.");
-    CHECK_HR(MFGetAttributeRatio(pMediaType, MF_MT_FRAME_RATE, &fpsNum, &fpsDen), "Failed to get MF_MT_FRAME_RATE attribute.");
+    // CHECK_HR(pMediaType->GetGUID(MF_MT_SUBTYPE, &subType), "Failed to get video sub type.");
+    // CHECK_HR(MFGetAttributeSize(pMediaType, MF_MT_FRAME_SIZE, &width, &height), "Failed to get MF_MT_FRAME_SIZE attribute.");
+    // CHECK_HR(MFGetAttributeRatio(pMediaType, MF_MT_FRAME_RATE, &fpsNum, &fpsDen), "Failed to get MF_MT_FRAME_RATE attribute.");
 
     description += GetGUIDNameConst(subType);
     description += ", " + std::to_string(width) + "x" + std::to_string(height) + ", " + std::to_string(fpsNum) + "/" + std::to_string(fpsDen) + "fps";
@@ -441,7 +441,7 @@ done:
   return description;
 }
 
-HRESULT FindMatchingVideoType(IMFMediaTypeHandler* pMediaTypeHandler, const GUID& pixelFormat, uint32_t width, uint32_t height, uint32_t fps, IMFMediaType* pOutMediaType)
+inline HRESULT FindMatchingVideoType(IMFMediaTypeHandler* pMediaTypeHandler, const GUID& pixelFormat, uint32_t width, uint32_t height, uint32_t fps, IMFMediaType* pOutMediaType)
 {
   HRESULT hr = S_FALSE;
   DWORD mediaTypeCount = 0;
@@ -481,7 +481,7 @@ The media type handler can be acquired from a source reader or sink writer.
 *  the types for.
 * @@Returns S_OK if successful or an error code if not.
 */
-HRESULT ListMediaTypes(IMFMediaTypeHandler* pMediaTypeHandler)
+inline HRESULT ListMediaTypes(IMFMediaTypeHandler* pMediaTypeHandler)
 {
   HRESULT hr = S_OK;
   DWORD mediaTypeCount = 0;
@@ -510,7 +510,7 @@ done:
 * List all the media modes available on a media source.
 * @param[in] pReader: pointer to the media source reader to list the media types for.
 */
-void ListModes(IMFSourceReader* pReader, bool brief = false)
+inline void ListModes(IMFSourceReader* pReader, bool brief = false)
 {
   HRESULT hr = NULL;
   DWORD dwMediaTypeIndex = 0;
@@ -547,7 +547,7 @@ void ListModes(IMFSourceReader* pReader, bool brief = false)
 * Remarks:
 * See https://docs.microsoft.com/en-us/windows/win32/coreaudio/device-properties.
 */
-HRESULT ListCaptureDevices(DeviceType deviceType)
+inline HRESULT ListCaptureDevices(DeviceType deviceType)
 {
   IMFAttributes* pDeviceAttributes = NULL;
   IMFActivate** ppDevices = NULL;
@@ -623,7 +623,7 @@ done:
 * Remarks:
 * See https://docs.microsoft.com/en-us/windows/win32/coreaudio/device-properties.
 */
-HRESULT ListVideoDevicesWithBriefFormat()
+inline HRESULT ListVideoDevicesWithBriefFormat()
 {
   IMFAttributes* pDeviceAttributes = NULL;
   IMFActivate** ppDevices = NULL;
@@ -689,7 +689,7 @@ done:
 * Remarks:
 * See https://docs.microsoft.com/en-us/windows/win32/medfound/streaming-audio-renderer.
 */
-HRESULT ListAudioOutputDevices()
+inline HRESULT ListAudioOutputDevices()
 {
   HRESULT hr = S_OK;
 
@@ -746,7 +746,7 @@ done:
 *  the output sink.
 * @@Returns S_OK if successful or an error code if not.
 */
-HRESULT GetAudioOutputDevice(UINT deviceIndex, IMFMediaSink** ppAudioSink)
+inline HRESULT GetAudioOutputDevice(UINT deviceIndex, IMFMediaSink** ppAudioSink)
 {
   HRESULT hr = S_OK;
 
@@ -817,7 +817,7 @@ done:
 *  to nullptr if no reader is required and only the source is needed.
 * @@Returns S_OK if successful or an error code if not.
 */
-HRESULT GetVideoSourceFromDevice(UINT nDevice, IMFMediaSource** ppVideoSource, IMFSourceReader** ppVideoReader)
+inline HRESULT GetVideoSourceFromDevice(UINT nDevice, IMFMediaSource** ppVideoSource, IMFSourceReader** ppVideoReader)
 {
   UINT32 videoDeviceCount = 0;
   IMFAttributes* videoConfig = NULL;
@@ -890,7 +890,7 @@ done:
 *  to nullptr if no reader is required and only the source is needed.
 * @@Returns S_OK if successful or an error code if not.
 */
-HRESULT GetSourceFromCaptureDevice(DeviceType deviceType, UINT nDevice, IMFMediaSource** ppMediaSource, IMFSourceReader** ppMediaReader)
+inline HRESULT GetSourceFromCaptureDevice(DeviceType deviceType, UINT nDevice, IMFMediaSource** ppMediaSource, IMFSourceReader** ppMediaReader)
 {
   UINT32 captureDeviceCount = 0;
   IMFAttributes* pDeviceConfig = NULL;
@@ -968,7 +968,7 @@ done:
 * @param[in] pDest: the media attribute the copy of the key is being made to.
 * @param[in] key: the media attribute key to copy.
 */
-HRESULT CopyAttribute(IMFAttributes* pSrc, IMFAttributes* pDest, const GUID& key)
+inline HRESULT CopyAttribute(IMFAttributes* pSrc, IMFAttributes* pDest, const GUID& key)
 {
   PROPVARIANT var;
   PropVariantInit(&var);
@@ -994,7 +994,7 @@ HRESULT CopyAttribute(IMFAttributes* pSrc, IMFAttributes* pDest, const GUID& key
 * @param[in] bitmapData: a pointer to the bytes containing the bitmap data.
 * @param[in] bitmapDataLength: the number of pixels in the bitmap.
 */
-void CreateBitmapFile(LPCWSTR fileName, long width, long height, WORD bitsPerPixel, BYTE* bitmapData, DWORD bitmapDataLength)
+inline void CreateBitmapFile(LPCWSTR fileName, long width, long height, WORD bitsPerPixel, BYTE* bitmapData, DWORD bitmapDataLength)
 {
   HANDLE file;
   BITMAPFILEHEADER fileHeader;
@@ -1029,18 +1029,18 @@ void CreateBitmapFile(LPCWSTR fileName, long width, long height, WORD bitsPerPix
   CloseHandle(file);
 }
 
-void CreateBitmapFromSample(LPCWSTR fileName, long width, long height, WORD bitsPerPixel, IMFSample* pSample)
+inline void CreateBitmapFromSample(LPCWSTR fileName, long width, long height, WORD bitsPerPixel, IMFSample* pSample)
 {
   IMFMediaBuffer* pMediaBuffer = NULL;
   DWORD bmpLength = 0;
   BYTE* bmpBuffer = NULL;
 
-  CHECK_HR(pSample->ConvertToContiguousBuffer(&pMediaBuffer), "CreateBitmapFromSample convert to contiguous buffer failed.");
-  CHECK_HR(pMediaBuffer->Lock(&bmpBuffer, NULL, &bmpLength), "CreateBitmapFromSamplep failed to lock converted buffer IMFSample.");
+  // CHECK_HR(pSample->ConvertToContiguousBuffer(&pMediaBuffer), "CreateBitmapFromSample convert to contiguous buffer failed.");
+  // CHECK_HR(pMediaBuffer->Lock(&bmpBuffer, NULL, &bmpLength), "CreateBitmapFromSamplep failed to lock converted buffer IMFSample.");
 
-  CreateBitmapFile(fileName, width, height, bitsPerPixel, bmpBuffer, bmpLength);
+  // CreateBitmapFile(fileName, width, height, bitsPerPixel, bmpBuffer, bmpLength);
 
-  CHECK_HR(pMediaBuffer->Unlock(), "CreateBitmapFromSample unlock buffer failed.");
+  // CHECK_HR(pMediaBuffer->Unlock(), "CreateBitmapFromSample unlock buffer failed.");
 
 done:
   return;
@@ -1051,7 +1051,7 @@ done:
 * From:
 * https://docs.microsoft.com/en-us/windows/win32/medfound/uncompressed-video-buffers
 */
-HRESULT GetDefaultStride(IMFMediaType* pType, LONG* plStride)
+inline HRESULT GetDefaultStride(IMFMediaType* pType, LONG* plStride)
 {
   LONG lStride = 0;
 
@@ -1104,7 +1104,7 @@ done:
 * @param[in] pFileStream: pointer to the file stream to write to.
 * @@Returns S_OK if successful or an error code if not.
 */
-HRESULT WriteSampleToFile(IMFSample* pSample, std::ofstream* pFileStream)
+inline HRESULT WriteSampleToFile(IMFSample* pSample, std::ofstream* pFileStream)
 {
   IMFMediaBuffer* buf = NULL;
   DWORD bufLength;
@@ -1139,7 +1139,7 @@ done:
 * @param[out] pSample: pointer to the create single buffer media sample.
 * @@Returns S_OK if successful or an error code if not.
 */
-HRESULT CreateSingleBufferIMFSample(DWORD bufferSize, IMFSample** pSample)
+inline HRESULT CreateSingleBufferIMFSample(DWORD bufferSize, IMFSample** pSample)
 {
   IMFMediaBuffer* pBuffer = NULL;
 
@@ -1168,7 +1168,7 @@ done:
 * @param[out] pDstSample: pointer to the media sample created.
 * @@Returns S_OK if successful or an error code if not.
 */
-HRESULT CreateAndCopySingleBufferIMFSample(IMFSample* pSrcSample, IMFSample** pDstSample)
+inline HRESULT CreateAndCopySingleBufferIMFSample(IMFSample* pSrcSample, IMFSample** pDstSample)
 {
   IMFMediaBuffer* pDstBuffer = NULL;
   DWORD srcBufLength;
@@ -1206,7 +1206,7 @@ done:
 *  contents were flushed. Output format of sample most likely changed.
 * @@Returns S_OK if successful or an error code if not.
 */
-HRESULT GetTransformOutput(IMFTransform* pTransform, IMFSample** pOutSample, BOOL* transformFlushed)
+inline HRESULT GetTransformOutput(IMFTransform* pTransform, IMFSample** pOutSample, BOOL* transformFlushed)
 {
   MFT_OUTPUT_STREAM_INFO StreamInfo = { 0 };
   MFT_OUTPUT_DATA_BUFFER outputDataBuffer = { 0 };
@@ -1292,7 +1292,7 @@ done:
 * @param[in] length: length of the byte array.
 * @@Returns a null terminated char array.
 */
-unsigned char* HexStr(const uint8_t* start, size_t length)
+inline unsigned char* HexStr(const uint8_t* start, size_t length)
 {
   // Each byte requires 2 characters. Add one additional byte to hold the null termination char.
   unsigned char* hexStr = (unsigned char*)calloc((size_t)(length * 2 + 1), 1);

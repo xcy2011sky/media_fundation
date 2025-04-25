@@ -41,7 +41,7 @@ struct CameraInfo {
     std::wstring symbolicLink;
 };
 
-class CameraCapture {
+class CameraCapture{
 public:
     ComPtr<IMFSourceReader> m_pSourceReader;
     ComPtr<ID3D11Device> m_pDevice;
@@ -59,6 +59,7 @@ public:
     int m_selectedCameraIndex = -1;
 
     // 新增队列和线程相关成员变量
+    // std::queue<std::vector<byte>> m_sampleQueue;
     std::queue<ComPtr<IMFSample>> m_sampleQueue;
     std::queue<std::vector<BYTE>> m_renderQueue;
     std::mutex m_sampleMutex, m_renderMutex;
@@ -92,5 +93,11 @@ public:
     int GetSelectedCameraIndex() const { return m_selectedCameraIndex; }
 
     HRESULT Initialize();
-    HRESULT RenderFrame();
+    std::vector<byte> CaptureRGBFrame();
+    HRESULT RenderTexture(ID3D11Texture2D* pTexture);
+
+private:
+    HWND m_hWnd = nullptr;
+    uint64_t cacheTime_ = 0;
+    bool firstIFrame_ = false;
 };

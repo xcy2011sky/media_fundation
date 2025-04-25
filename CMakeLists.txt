@@ -11,10 +11,16 @@ set(SOURCES
     main.cpp
     CameraCapture.cpp
     MFTCodecHelper.cpp
+    Render.cpp
 )
 
 # 添加可执行文件
 add_executable(MediaFoundationCamera ${SOURCES})
+
+target_link_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/glew/lib/
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/glfw/lib/
+)
 
 # 链接必要的库
 target_link_libraries(MediaFoundationCamera PRIVATE
@@ -25,6 +31,9 @@ target_link_libraries(MediaFoundationCamera PRIVATE
     dxgi.lib
     d3dcompiler.lib
     evr.lib
+    opengl32.lib
+    glew32.lib
+    glfw3.lib
 )
 
 # 添加预处理器定义
@@ -41,6 +50,8 @@ target_include_directories(MediaFoundationCamera PRIVATE
     $ENV{WindowsSdkDir}Include/um
     $ENV{WindowsSdkDir}Include/shared
     $ENV{WindowsSdkDir}Include/ucrt
+    ${CMAKE_CURRENT_LIST_DIR}/3rdparty/glew/include/
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/glfw/include/
 )
 
 # 添加后期构建步骤以复制所需的 DLL 文件

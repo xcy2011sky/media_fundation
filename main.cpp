@@ -1,6 +1,7 @@
 ﻿#include <windows.h>
 #include <iostream>
 #include "CameraCapture.h"
+#include "Render.h"
 #include <conio.h>
 
 using namespace Microsoft::WRL;
@@ -29,11 +30,11 @@ int main() {
     }
 
     // 选择相机
-    int selectedCamera = -1;
-    while (selectedCamera < 0 || selectedCamera >= static_cast<int>(cameraList.size())) {
-        std::cout << "Select camera (0-" << cameraList.size() - 1 << "): ";
-        std::cin >> selectedCamera;
-    }
+    int selectedCamera = 0;
+    // while (selectedCamera < 0 || selectedCamera >= static_cast<int>(cameraList.size())) {
+    //     std::cout << "Select camera (0-" << cameraList.size() - 1 << "): ";
+    //     std::cin >> selectedCamera;
+    // }
 
     // 初始化选中的相机
     hr = capture.SelectCamera(selectedCamera);
@@ -44,12 +45,14 @@ int main() {
 
     std::cout << "Press ESC to exit" << std::endl;
 
+    Render render("Camera Capture", 1920, 1080);
+    std::vector<byte> rgbData;
     // 主循环
     while (true) {
-        hr = capture.RenderFrame();
-        if (FAILED(hr)) {
-            std::cout << "Failed to render frame" << std::endl;
-            break;
+         rgbData = capture.CaptureRGBFrame();
+         render.RenderFrame();
+        if(!rgbData.empty()) {
+            render.updateRGBTexture(1920, 1080, rgbData.data());
         }
 
         // 检查是否按下ESC键退出
@@ -58,6 +61,7 @@ int main() {
         }
         capture.UpdateFps();
     }
+
 
     return 0;
 }
