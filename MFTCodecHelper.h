@@ -18,57 +18,31 @@
 #pragma comment(lib, "wmcodecdspuuid.lib")
 using namespace Microsoft::WRL;
 
-template <typename T>
-struct AutoReleasePtr {
-    T* ptr;
-    AutoReleasePtr(T* p) : ptr(p) {}
-    ~AutoReleasePtr() { if (ptr) ptr->Release(); }
-    operator T*() const { return ptr; }
-};
 class MFTCodecHelper {
 public:
-    MFTCodecHelper();
-    ~MFTCodecHelper();
+    MFTCodecHelper() = default;
+    ~MFTCodecHelper() = default;
 
     // 初始化MFT编解码器
     HRESULT Initialize(ID3D11Device* pD3D11Device);
 
     // 解码H264视频流并生成GPU纹理
-    HRESULT DecodeH264ToTexture(std::vector<byte> buffer, std::vector<byte> &outputByte);
     HRESULT DecodeH264ToTexture(IMFSample *pSample, std::vector<byte> &outputByte);
-
-    // 编码GPU纹理为MP4文件
-    HRESULT EncodeTextureToMP4(ID3D11Texture2D* pInputTexture, const std::wstring& outputFilePath);
-
-    HRESULT ResetDecoder();
 
 private:
     // 初始化H264解码器
     HRESULT InitializeH264Decoder();
     // 初始化YUV解码器
     HRESULT InitializeYUVDecoder();
-
-    // 初始化H264编码器
-    HRESULT InitializeH264Encoder();
-
-    // 创建D3D11纹理
-    HRESULT CreateD3D11Texture(DXGI_FORMAT format,IMFSample* pSample, ID3D11Texture2D** ppTexture);
-    HRESULT ProcessPendingOutputs(ID3D11Texture2D** ppTexture);
+    // 解码H264到RGB
     HRESULT ConvertH264ToRGB(IMFSample* pInputSample,std::vector<byte> &outputByte);
 
 public:
+    // 解码YUV到RGB
     HRESULT ConvertYUVToRGB24(IMFSample* pInputSample, std::vector<byte>& outputByte);
 
 public:
-    ComPtr<ID3D11Device> m_pD3D11Device;
-    ComPtr<ID3D11DeviceContext> m_pD3D11Context;
-
     // 解码相关
-    ComPtr<IMFTransform> m_pH264DecoderMFT;
-    ComPtr<IMFTransform> m_pYUVDecoderMFT;
-
-    // 编码相关
-    ComPtr<IMFTransform> m_pEncoderMFT;
-
-    bool m_bDeviceManagerInitialized = false;
+    ComPtr<IMFTransform> m_pH264DecoderMFT = nullptr;
+    ComPtr<IMFTransform> m_pYUVDecoderMFT = nullptr;
 };

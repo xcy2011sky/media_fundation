@@ -62,7 +62,7 @@ void Render::updateRGBTexture(int width, int height, const unsigned char* rgbDat
     }
 
     glBindTexture(GL_TEXTURE_2D, m_textureID);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, rgbData);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgbData);
 
     // 检查OpenGL错误
     GLenum err = glGetError();

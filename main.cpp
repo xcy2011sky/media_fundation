@@ -24,17 +24,16 @@ int main() {
         return E_FAIL;
     }
 
+    //选择Color相机
     std::cout << "Available cameras:" << std::endl;
+    int selectedCamera = -1;
     for (size_t i = 0; i < cameraList.size(); ++i) {
+        auto name = cameraList[i].friendlyName;
+        if(name.find(L"RGB") != std::wstring::npos || name.find(L"Color") != std::wstring::npos){
+            selectedCamera = i;
+        }
         std::wcout << i << ": " << cameraList[i].friendlyName << std::endl;
     }
-
-    // 选择相机
-    int selectedCamera = 0;
-    // while (selectedCamera < 0 || selectedCamera >= static_cast<int>(cameraList.size())) {
-    //     std::cout << "Select camera (0-" << cameraList.size() - 1 << "): ";
-    //     std::cin >> selectedCamera;
-    // }
 
     // 初始化选中的相机
     hr = capture.SelectCamera(selectedCamera);
@@ -48,7 +47,7 @@ int main() {
     Render render("Camera Capture", 1920, 1080);
     std::vector<byte> rgbData;
     // 主循环
-    while (true) {
+    while (!render.isWindowsClose()) {
          rgbData = capture.CaptureRGBFrame();
          render.RenderFrame();
         if(!rgbData.empty()) {

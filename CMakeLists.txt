@@ -27,9 +27,6 @@ target_link_libraries(MediaFoundationCamera PRIVATE
     mfplat.lib
     mfreadwrite.lib
     mfuuid.lib
-    d3d11.lib
-    dxgi.lib
-    d3dcompiler.lib
     evr.lib
     opengl32.lib
     glew32.lib
@@ -57,6 +54,6 @@ target_include_directories(MediaFoundationCamera PRIVATE
 # 添加后期构建步骤以复制所需的 DLL 文件
 add_custom_command(TARGET MediaFoundationCamera POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "C:/Windows/System32/d3dcompiler_47.dll"
+        ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/glew/bin/glew32.dll
         $<TARGET_FILE_DIR:MediaFoundationCamera>
 )

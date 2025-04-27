@@ -43,45 +43,11 @@ struct CameraInfo {
 
 class CameraCapture{
 public:
-    ComPtr<IMFSourceReader> m_pSourceReader;
-    ComPtr<ID3D11Device> m_pDevice;
-    ComPtr<ID3D11DeviceContext> m_pContext;
-    ComPtr<IDXGISwapChain> m_pSwapChain;
-    ComPtr<ID3D11RenderTargetView> m_pRenderTargetView;
-    
-    // 帧率统计相关
-    std::chrono::steady_clock::time_point m_lastFpsTime;
-    int m_frameCount = 0;
-    float m_currentFps = 0.0f;
-
-    // 相机信息
-    std::vector<CameraInfo> m_cameraList;
-    int m_selectedCameraIndex = -1;
-
-    // 新增队列和线程相关成员变量
-    // std::queue<std::vector<byte>> m_sampleQueue;
-    std::queue<ComPtr<IMFSample>> m_sampleQueue;
-    std::queue<std::vector<BYTE>> m_renderQueue;
-    std::mutex m_sampleMutex, m_renderMutex;
-    std::condition_variable m_sampleCV, m_renderCV;
-    bool m_stopThreads = true;
-
-    // 新增MFT相关成员变量
-    ComPtr<IMFTransform> m_pMFT;
-    ComPtr<IMFMediaType> m_pInputType;
-    ComPtr<IMFMediaType> m_pOutputType;
-    MFTCodecHelper m_CodecHelper;
-
-    HRESULT EnumerateCameras();
-    HRESULT CreateMediaSourceReader(const std::wstring& symbolicLink);
-    HRESULT CreateD3D11DeviceAndSwapChain();
-    void UpdateFps();
-    void Cleanup();
-    HRESULT InitializeMFT();
-
-public:
     CameraCapture();
     ~CameraCapture();
+
+    //初始化资源
+    HRESULT Initialize();
 
     // 获取可用相机列表
     const std::vector<CameraInfo>& GetCameraList() const { return m_cameraList; }
@@ -92,12 +58,30 @@ public:
     // 获取当前选中的相机索引
     int GetSelectedCameraIndex() const { return m_selectedCameraIndex; }
 
-    HRESULT Initialize();
+    // 获取RGB数据帧
     std::vector<byte> CaptureRGBFrame();
-    HRESULT RenderTexture(ID3D11Texture2D* pTexture);
 
+    // 更新帧率
+    void UpdateFps();
 private:
-    HWND m_hWnd = nullptr;
-    uint64_t cacheTime_ = 0;
-    bool firstIFrame_ = false;
+    HRESULT InitializeMFT();
+    HRESULT EnumerateCameras();
+    HRESULT CreateMediaSourceReader(const std::wstring& symbolicLink);
+    void Cleanup();
+    
+private:
+    // Media Foundation 相关
+    ComPtr<IMFSourceReader> m_pSourceReader = nullptr;
+    ComPtr<ID3D11Device> m_pDevice = nullptr;
+    ComPtr<IMFTransform> m_pMFT = nullptr;
+    MFTCodecHelper m_CodecHelper;
+
+    // 帧率统计相关
+    std::chrono::steady_clock::time_point m_lastFpsTime;
+    int m_frameCount = 0;
+    float m_currentFps = 0.0f;
+
+    // 相机信息
+    std::vector<CameraInfo> m_cameraList;
+    int m_selectedCameraIndex = -1;
 };
