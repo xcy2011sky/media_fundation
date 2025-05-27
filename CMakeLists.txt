@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(SOURCES
     main.cpp
     CameraCapture.cpp
-    MFTCodecHelper.cpp
+    FFmpegCodecHelper.cpp
     Render.cpp
 )
 
@@ -20,6 +20,7 @@ add_executable(MediaFoundationCamera ${SOURCES})
 target_link_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/glew/lib/
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/glfw/lib/
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/ffmpeg/lib/
 )
 
 # 链接必要的库
@@ -31,6 +32,10 @@ target_link_libraries(MediaFoundationCamera PRIVATE
     opengl32.lib
     glew32.lib
     glfw3.lib
+    avcodec.lib
+    avformat.lib
+    avutil.lib
+    swscale.lib
 )
 
 # 添加预处理器定义
@@ -49,6 +54,7 @@ target_include_directories(MediaFoundationCamera PRIVATE
     $ENV{WindowsSdkDir}Include/ucrt
     ${CMAKE_CURRENT_LIST_DIR}/3rdparty/glew/include/
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/glfw/include/
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/ffmpeg/include/
 )
 
 # 添加后期构建步骤以复制所需的 DLL 文件
@@ -56,4 +62,11 @@ add_custom_command(TARGET MediaFoundationCamera POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/glew/bin/glew32.dll
         $<TARGET_FILE_DIR:MediaFoundationCamera>
+)
+
+file(GLOB_RECURSE ffmpegFiles ${CMAKE_CURRENT_LIST_DIR}/3rdparty/ffmpeg/lib/*)
+list(FILTER ffmpegFiles INCLUDE REGEX ".*.dll$")
+add_custom_command(
+    TARGET MediaFoundationCamera POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${ffmpegFiles}
+                                            $<TARGET_FILE_DIR:MediaFoundationCamera>
 )
