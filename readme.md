@@ -6,7 +6,8 @@ This project demonstrates how to capture video frames from a camera using Media 
 
 - Enumerates available cameras.
 - Captures video frames in H.264 format.
-- Decodes H.264 frames to RGB32 format using an MFT (Media Foundation Transform).
+- Decodes H.264 frames to RGB24 format using an FFmpeg.
+- Encodes RGB24 frames to H.264 format using an FFmpeg.
 - Renders decoded frames using Direct3D 11.
 
 ## Directory Structure

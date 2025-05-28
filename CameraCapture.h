@@ -65,7 +65,7 @@ public:
 
 private:
   bool InitializeFFmpegCodecHelper();
-  HRESULT CreateDevice();
+  HRESULT CreateHardwareDevice();
   HRESULT EnumerateCameras();
   HRESULT CreateMediaSourceReader(const std::wstring &symbolicLink);
   void Cleanup();
@@ -73,7 +73,6 @@ private:
 private:
   // Media Foundation 相关
   ComPtr<IMFSourceReader> m_pSourceReader = nullptr;
-  ComPtr<IMFTransform> m_pMFT = nullptr;
 
   FFmpegCodecHelper m_codecHelper;
 
@@ -86,7 +85,8 @@ private:
   std::vector<CameraInfo> m_cameraList;
   int m_selectedCameraIndex = -1;
 
+  // D3D11 相关
   ComPtr<ID3D11Device> m_d3d11_device;
   ComPtr<ID3D11DeviceContext> m_d3d11_context;
-  D3D_FEATURE_LEVEL m_sfeature_level;
+  D3D_FEATURE_LEVEL m_feature_level;
 };

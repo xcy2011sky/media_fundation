@@ -27,7 +27,7 @@ HRESULT CameraCapture::Initialize() {
     return hr;
 
   //  初始化硬件
-  hr = CreateDevice();
+  hr = CreateHardwareDevice();
   if (FAILED(hr))
     return hr;
 
@@ -210,23 +210,23 @@ std::vector<byte> CameraCapture::CaptureRGBFrame() {
   DWORD dwFlags = 0;
   DWORD streamIndex = 0;
   LONGLONG llTimeStamp = 0;
-  std::vector<byte> outputByte;
-  std::vector<uint8_t> rgb_buffer(1920 * 1080 * 3);
+  std::vector<byte> outputByte(1920 * 1080 * 3);
 
   HRESULT hr = m_pSourceReader->ReadSample(MF_SOURCE_READER_FIRST_VIDEO_STREAM,
                                            0, &streamIndex, &dwFlags,
                                            &llTimeStamp, &pSample);
 
   if (SUCCEEDED(hr) && pSample) {
-    if (!m_codecHelper.ProcessSample(pSample, rgb_buffer.data(),
-                                     rgb_buffer.size())) {
-      std::cout << "Failed to process sample" << std::endl;
+    if (!m_codecHelper.DecodeH264ToTexture(pSample, outputByte.data(),
+                                           outputByte.size())) {
+      std::cout << "Failed to decode H264 sample to texture." << std::endl;
     }
-    m_codecHelper.EncodeFrameFromHW();
+    if (!m_codecHelper.EncodeFrameToFile()) {
+      std::cout << " Failed to encode frame to H.264 and write to output file."
+                << std::endl;
+    }
   }
   SAFE_RELEASE(pSample);
-  outputByte = rgb_buffer;
-
   return outputByte;
 }
 
@@ -256,30 +256,22 @@ void CameraCapture::Cleanup() {
 bool CameraCapture::InitializeFFmpegCodecHelper() {
   auto hr = m_codecHelper.InitializeDecoder(m_d3d11_device.Get());
   if (hr != true) {
-    std::cout << "FFmpeg解码器初始化失败" << std::endl;
+    std::cout << "FFmpeg decoder initialization failure" << std::endl;
   }
 
   hr = m_codecHelper.InitializeEncoder("output.h264");
   if (hr != true) {
-    std::cout << "FFmpeg编码器初始化失败" << std::endl;
+    std::cout << "FFmpeg encoder initialization failure" << std::endl;
   }
 
   return hr;
 }
 
-HRESULT CameraCapture::CreateDevice() {
-  HRESULT hr = D3D11CreateDevice(
-      nullptr,                  // 默认显示适配器（主显卡）
-      D3D_DRIVER_TYPE_HARDWARE, // 硬件加速模式
-      nullptr,                  // 不使用软件设备
-      0,                        // 创建标志（默认为0）
-      nullptr, // 特征等级数组（若为nullptr，自动选择最高支持等级）
-      0,                             // 特征等级数组元素数量
-      D3D11_SDK_VERSION,             // 固定为 D3D11_SDK_VERSION
-      m_d3d11_device.GetAddressOf(), // 返回设备指针的地址
-      &m_sfeature_level,             // 返回实际支持的特征等级
-      m_d3d11_context.GetAddressOf() // 返回设备上下文指针的地址
-  );
+HRESULT CameraCapture::CreateHardwareDevice() {
+  HRESULT hr =
+      D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, nullptr,
+                        0, D3D11_SDK_VERSION, m_d3d11_device.GetAddressOf(),
+                        &m_feature_level, m_d3d11_context.GetAddressOf());
   if (FAILED(hr)) {
     std::cerr << "Failed to Create D3D11C Device." << std::endl;
     return hr;
